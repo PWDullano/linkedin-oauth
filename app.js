@@ -4,10 +4,13 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var session = require('express-session')
+var session = require('express-session');
+var passport = require('passport');
+require('dotenv').config();
 var routes = require('./routes/index');
 var users = require('./routes/users');
-
+var authRoutes = require('./routes/auth')
+var LinkedInStrategy = require('passport-linkedin').Strategy
 var app = express();
 
 app.use(session({
@@ -29,7 +32,31 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({ keys: [process.env.SESSION_KEY1, process.env.SESSION_KEY2] }))
 
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LinkedInStrategy({
+    consumerKey: process.env.LINKEDIN_CLIENT_ID,
+    consumerSecret: process.env.LINKEDIN_CLIENT_SECRET,
+    callbackURL: process.env.HOST + "/auth/linkedin/callback"
+  },
+  function(token, tokenSecret, profile, done){
+    done(null, profile)
+  }
+));
+passport.serializeUser(function(user, done){
+  done(null, user);
+});
+passport.deserializeUser(function(user,done){
+  done(null, user)
+});
+
+app.use(function (req, res, next) {
+  res.locals.user = req.user
+  next()
+})
+
 app.use('/', routes);
+app.use('/', authRoutes);
 app.use('/users', users);
 
 // catch 404 and forward to error handler
