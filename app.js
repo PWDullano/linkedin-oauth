@@ -4,20 +4,15 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var session = require('express-session');
+var session = require('cookie-session');
 var passport = require('passport');
-require('dotenv').config();
+var LinkedInStrategy = require('passport-linkedin').Strategy
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var authRoutes = require('./routes/auth')
-var LinkedInStrategy = require('passport-linkedin').Strategy
+require('dotenv').config();
 var app = express();
-
-app.use(session({
-  secret: 'pizza dizzle',
-  resave: false,
-  saveUninitialized: true
-}))
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -34,6 +29,7 @@ app.use(session({ keys: [process.env.SESSION_KEY1, process.env.SESSION_KEY2] }))
 
 app.use(passport.initialize());
 app.use(passport.session());
+
 passport.use(new LinkedInStrategy({
     consumerKey: process.env.LINKEDIN_CLIENT_ID,
     consumerSecret: process.env.LINKEDIN_CLIENT_SECRET,
@@ -43,9 +39,11 @@ passport.use(new LinkedInStrategy({
     done(null, profile)
   }
 ));
+
 passport.serializeUser(function(user, done){
   done(null, user);
 });
+
 passport.deserializeUser(function(user,done){
   done(null, user)
 });
